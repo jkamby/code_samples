@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="build" name="CS680_HW16" xmlns:jacoco="antlib:org.jacoco.ant">
+	<property environment="env" />
+	<property name="jacoco.result.dir" location="test" />
+	<property name="findbugs.home" value="${env.FINDBUGS_HOME}" />
+	<property name="debuglevel" value="source,lines,vars" />
+	<property name="target" value="1.8" />
+	<property name="source" value="1.8" />
+	<path id="JUnit 4.libraryclasspath">
+		<pathelement location="${env.HOMEPATH}/.p2/pool/plugins/org.junit_4.12.0.v201504281640/junit.jar" />
+		<pathelement location="${env.HOMEPATH}/.p2/pool/plugins/org.hamcrest.core_1.3.0.v201303031735.jar" />
+	</path>
+	<path id="CS680_HW16.classpath">
+		<pathelement location="bin" />
+		<pathelement location="test/bin" />
+		<pathelement location="${env.FINDBUGS_HOME}/lib" />
+		<path refid="JUnit 4.libraryclasspath" />
+	</path>
+	<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+		<classpath path="${ant.home}/*jacoco*.jar" />
+	</taskdef>
+	<taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">
+		<classpath path="${env.FINDBUGS_HOME}/lib/findbugs-ant.jar" />
+	</taskdef>
+	<target name="init">
+		<mkdir dir="bin" />
+		<copy includeemptydirs="false" todir="bin">
+			<fileset dir="src">
+				<exclude name="**/*.launch" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		<mkdir dir="test/bin" />
+		<copy includeemptydirs="false" todir="test/bin">
+			<fileset dir="test/src">
+				<exclude name="**/*.launch" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="clean">
+		<echo message="Deleting ALL generated files and reports..." />
+		<delete dir="bin" />
+		<delete includeEmptyDirs="true">
+			<fileset dir="test">
+				<not>
+					<filename name="**/*.java" />
+				</not>
+			</fileset>
+		</delete>
+	</target>
+	<target depends="init" name="build">
+		<echo message="${ant.project.name}: ${ant.file}" />
+		<javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+			<src path="src" />
+			<classpath refid="CS680_HW16.classpath" />
+		</javac>
+		<javac debug="true" debuglevel="${debuglevel}" destdir="test/bin" includeantruntime="false" source="${source}" target="${target}">
+			<src path="test/src" />
+			<classpath refid="CS680_HW16.classpath" />
+		</javac>
+	</target>
+	<target name="junitrun" depends="build">
+		<jacoco:coverage destfile="${jacoco.result.dir}/jacoco.exe">
+			<junit fork="yes" printsummary="withOutAndErr" forkmode="once">
+				<formatter type="plain" usefile="false" />
+				<batchtest>
+					<fileset dir="test/bin">
+						<include name="**/*Test*" />
+					</fileset>
+				</batchtest>
+				<jvmarg line="-ea" />
+				<classpath refid="CS680_HW16.classpath" />
+			</junit>
+		</jacoco:coverage>
+	</target>
+	<target name="jacocoreport" depends="junitrun">
+		<jacoco:report>
+			<executiondata>
+				<file file="${jacoco.result.dir}/jacoco.exe" />
+			</executiondata>
+			<structure name="CS680 HW16 JaCoCo Report">
+				<classfiles>
+					<fileset dir="test/bin" includes="**/*Test.class"/>
+				</classfiles>
+				<sourcefiles encoding="UTF-8">
+					<fileset dir="src" />
+				</sourcefiles>
+			</structure>
+			<html destdir="${jacoco.result.dir}" />
+		</jacoco:report>
+	</target>
+	<target name="findbugs" depends="jacocoreport">
+		<findbugs home="${findbugs.home}" output="html" stylesheet="fancy-hist.xsl" outputFile="test/findbugs.html">
+			<auxClasspath refid="CS680_HW16.classpath" />
+			<sourcePath path="src/" />
+			<fileset dir="bin" includes="**/*.class" />
+			<sourcePath path="test/src/" />
+			<fileset dir="test/bin" includes="**/*Test.class" />
+		</findbugs>
+	</target>
+</project>
